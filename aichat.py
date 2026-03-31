@@ -1,55 +1,70 @@
 import streamlit as st
-
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-st.title("ai感情助手")
-st.header("欢迎来到ai感情助手！")
-st.write(
-    "在这里，你可以与AI进行情感交流，分享你的心情和感受。无论你是开心、难过、焦虑还是兴奋，AI都会倾听你的心声，并给予你温暖的回应。")
-st.write(
-    "请在下面的输入框中分享你的心情，AI会尽力理解并给予你支持和建议。无论你需要一个倾听者，还是想要一些建议，AI都会在这里陪伴你。")
-st.write("记住，你并不孤单，AI会一直在这里陪伴你，帮助你度过每一个情感的时刻。")
+st.title("AI感情助手")
+st.header("欢迎来到AI感情助手！")
+# 加载环境变量
+load_dotenv()
 
-# 初始化客户端
 client = OpenAI(
-    api_key="sk-RjjumiDS7bNvbrBjINlYkQUnPFmJZmTLU97I6SsEu6NjiA2T",  # 填入你的密钥
-    base_url="https://ai.xingyungept.cn/v1"  # 填入你的服务器地址
+    base_url=os.getenv("BASE_URL"),
+    api_key=os.getenv("API_KEY"),
 )
+# ai初始性格
+AIChatName = "小A"
+AIChatTrait = "小A是一个活泼的助手，能帮助主人解决各种问题。"
 
-# 发起对话
-client_characht = "你是香香软软的小蛋糕"
-
+# 消息历史
 if "messages" not in st.session_state:
     st.session_state.messages = []
+#ai性格记忆化 
+if "AIChatName" not in st.session_state:
+    st.session_state.AIChatName = AIChatName
+if "AIChatTrait" not in st.session_state:
+    st.session_state.AIChatTrait = AIChatTrait
 
+# 展示历史
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 with st.sidebar:
-    st.subheader( "人物配置")
+    st.subheader("人物配置")
+    AINewName= st.text_input("人物名称", value=AIChatName)
+    AINewTrait = st.text_area("自定义人物描述", value=AIChatTrait, height=300)
 
+UserMessage = st.chat_input("主人请说")
+if UserMessage:
+    # 加入用户消息
+    st.session_state.messages.append({"role": "user", "content": UserMessage})
 
-usermessage = st.chat_input("你好，不知道你有什么困难，在这ai会帮助你(ai develop everything)")
-if usermessage:
-    st.session_state.messages.append({"role": "user", "content": usermessage})
-    st.chat_message("user").write(usermessage)
+    # 显示用户消息流式输出
+    with st.chat_message("user"):
+        ma = st.empty()
+        s = ""
+        for x in UserMessage:
+            s += x
+            ma.write(s)
+
+    messages_to_send = [
+        {"role": "system",
+         "content": f"你的名字为{st.session_state.AIChatName}，你的性格是{st.session_state.AIChatTrait}"},  # 永远有内容
+        *st.session_state.messages
+    ]
+
     response = client.chat.completions.create(
-        model="gpt-5.2",
-        messages=[
-            {"role": "system", "content": client_characht},
-            *st.session_state.messages
-        ],
-        stream= True
+        model=os.getenv("MODULE"),
+        messages=messages_to_send,
+        stream=True
     )
-    # 非流式输出的解析方式
-    # st.chat_message("assistant").write(response.choices[0].message.content)
+
+    # 流式显示回复
     res = st.empty()
-    # 流式输出的解析方式
     ai_resp = ""
     for chunk in response:
-        if chunk.choices[0].delta.content is not None:
+        if chunk.choices[0].delta.content:
             ai_resp += chunk.choices[0].delta.content
-            res.chat_message("assistant").write(ai_resp)
+            res.chat_message("assistant").markdown(ai_resp)
 
-    st.session_state.messages.append({"role": "assistant", "content":ai_resp})
-
+    st.session_state.messages.append({"role": "assistant", "content": ai_resp})
