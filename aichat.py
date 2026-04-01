@@ -59,9 +59,27 @@ with st.sidebar:
     for i in Path:
         cl1, cl2 = st.columns([2,1])    
         with cl1: 
-            st.button(i[:-5], use_container_width=True,key = i)
+            if st.button(i[:-5], use_container_width=True,key = i):
+                if st.session_state.messages:
+                    if not os.path.exists("./data"):
+                        os.mkdir("./data")
+                    with open(f"./data/{st.session_state.Key}.json", "w") as f:
+                        #向json里写入消息等数据
+                        json.dump({"AIChatName": AIChatName, "AIChatTrait": AIChatTrait}, f)
+                        json.dump({"messages": st.session_state.messages}, f)
+                #加载数据
+                with open(f"./data/{i.name}", "r",encoding= "utf-8") as f:
+                    data = json.load(f)
+                    st.session_state.AIChatName = data["AIChatName"]
+                    st.session_state.AIChatTrait = data["AIChatTrait"]
+                    st.session_state.messages = data["messages"]
+                    st.session_state.Key = i
+                st.rerun()
         with cl2: 
-            st.button("删除", use_container_width=True,key=i+"delete" )
+            if  st.button("删除", use_container_width=True,key=i+"delete" ):
+                os.remove(f"./data/{i}")
+                st.rerun()
+
     
     
 
