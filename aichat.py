@@ -13,8 +13,20 @@ def GetPath() -> []:
     return path
 
 
-st.title("AI感情助手")
-st.header("欢迎来到AI感情助手！")
+def SaveData():
+    if not os.path.exists("./data"):
+        os.mkdir("./data")
+    with open(f"./data/{st.session_state.Key}.json", "w") as f:
+        # 向json里写入消息等数据
+        data_to_save = {
+            "AIChatName": st.session_state.AIChatName,
+            "AIChatTrait": st.session_state.AIChatTrait,
+            "messages": st.session_state.messages,
+            "Key": st.session_state.Key,
+        }
+        json.dump(data_to_save, f)
+
+
 # 加载环境变量
 load_dotenv()
 
@@ -23,8 +35,12 @@ client = OpenAI(
     api_key=os.getenv("API_KEY"),
 )
 # ai初始性格
+
 AIChatName = "小A"
 AIChatTrait = "小A是一个活泼的助手，能帮助主人解决各种问题。"
+
+st.title("AI感情助手")
+st.header("欢迎来到AI感情助手！")
 
 # 消息历史
 if "messages" not in st.session_state:
@@ -42,24 +58,9 @@ if "Key" not in st.session_state:
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-def SaveData():
-    #如果路径不存在则创建
-    if not os.path.exists("./data"):
-        os.mkdir("./data")
-    with open(f"./data/{st.session_state.Key}.json", "w") as f:
-            #如果路径不存在则创建
-            # 向json里写入消息等数据
-            data_to_save = {
-                "AIChatName":st.session_state.AIChatName,
-                "AIChatTrait": st.session_state.AIChatTrait,
-                "messages": st.session_state.messages,
-                "Key" :st.session_state.Key
-            }
-            json.dump(data_to_save, f)
-
 
 with st.sidebar:
-    if st.button("新建会话", use_container_width=True) :
+    if st.button("新建会话", use_container_width=True):
         if st.session_state.messages:
             SaveData()
         st.session_state.messages = []
@@ -96,9 +97,9 @@ with st.sidebar:
     AINewName = st.text_input("人物名称", value=AIChatName)
     AINewTrait = st.text_area("自定义人物描述", value=AIChatTrait, height=300)
 
+
 UserMessage = st.chat_input("主人请说")
 if UserMessage:
-    # 加入用户消息
     st.session_state.messages.append({"role": "user", "content": UserMessage})
 
     # 显示用户消息流式输出
@@ -109,15 +110,16 @@ if UserMessage:
             s += x
             ma.write(s)
 
-
     response = client.chat.completions.create(
         model=os.getenv("MODULE"),
         messages=[
-            {"role": "system",
-            "content": f"你的名字为{st.session_state.AIChatName}，你的性格是{st.session_state.AIChatTrait}"},  # 永远有内容
-            *st.session_state.messages
+            {
+                "role": "system",
+                "content": f"你的名字为{st.session_state.AIChatName}，你的性格是{st.session_state.AIChatTrait}",
+            },  # 永远有内容
+            *st.session_state.messages,
         ],
-        stream=True
+        stream=True,
     )
 
     # 流式显示回复
