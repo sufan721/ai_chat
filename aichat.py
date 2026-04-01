@@ -43,7 +43,11 @@ for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 def SaveData():
+    #如果路径不存在则创建
+    if not os.path.exists("./data"):
+        os.mkdir("./data")
     with open(f"./data/{st.session_state.Key}.json", "w") as f:
+            #如果路径不存在则创建
             # 向json里写入消息等数据
             data_to_save = {
                 "AIChatName":st.session_state.AIChatName,
