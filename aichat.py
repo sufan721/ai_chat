@@ -36,7 +36,7 @@ if "AIChatName" not in st.session_state:
 if "AIChatTrait" not in st.session_state:
     st.session_state.AIChatTrait = AIChatTrait
 if "Key" not in st.session_state:
-    st.session_state.Key = datetime.now().strftime("%Y%m%d%H")
+    st.session_state.Key = datetime.now().strftime("%Y%m%d%H%m%S")
 
 # 展示历史
 for msg in st.session_state.messages:
@@ -58,11 +58,10 @@ with st.sidebar:
     # 显示历史会话
     for i in Path:
         cl1, cl2 = st.columns([2,1])    
-
         with cl1: 
-            st.button(i[:-5], use_container_width=True)
+            st.button(i[:-5], use_container_width=True,key = i)
         with cl2: 
-            st.button("删除", use_container_width=True)
+            st.button("删除", use_container_width=True,key=i+"delete" )
     
     
 
