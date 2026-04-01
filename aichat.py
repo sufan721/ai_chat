@@ -2,6 +2,17 @@ import streamlit as st
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+import json
+from datetime import datetime
+
+
+def GetPath() -> []:
+    if not os.path.exists("./data"):
+        return []
+    path = os.listdir("./data")
+    return path
+
+
 
 st.title("AI感情助手")
 st.header("欢迎来到AI感情助手！")
@@ -24,15 +35,42 @@ if "AIChatName" not in st.session_state:
     st.session_state.AIChatName = AIChatName
 if "AIChatTrait" not in st.session_state:
     st.session_state.AIChatTrait = AIChatTrait
+if "Key" not in st.session_state:
+    st.session_state.Key = datetime.now().strftime("%Y%m%d%H")
 
 # 展示历史
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 with st.sidebar:
+    if st.button("新建会话",use_container_width=True) and st.session_state.messages:
+        if not os.path.exists("./data"):
+            os.mkdir("./data")
+        with open(f"./data/{st.session_state.Key}.json", "w") as f:
+            #向json里写入消息等数据
+
+            json.dump({"Key": st.session_state.Key}, f)
+            json.dump({"AIChatName": AIChatName, "AIChatTrait": AIChatTrait}, f)
+            json.dump({"messages": st.session_state.messages}, f)
+            st.session_state.clear()
+            st.rerun()
+    Path = GetPath()
+    # 显示历史会话
+    for i in Path:
+        cl1, cl2 = st.columns([2,1])    
+
+        with cl1: 
+            st.button(i[:-5], use_container_width=True)
+        with cl2: 
+            st.button("删除", use_container_width=True)
+    
+    
+
+
     st.subheader("人物配置")
     AINewName= st.text_input("人物名称", value=AIChatName)
     AINewTrait = st.text_area("自定义人物描述", value=AIChatTrait, height=300)
+
 
 UserMessage = st.chat_input("主人请说")
 if UserMessage:
