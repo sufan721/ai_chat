@@ -36,8 +36,8 @@ client = OpenAI(
 )
 # ai初始性格
 
-AIChatName = "小A"
-AIChatTrait = "小A是一个活泼的助手，能帮助主人解决各种问题。"
+AIChatName = os.getenv("AIChatName")
+AIChatTrait = os.getenv("AIChatTrait")
 
 st.title("AI感情助手")
 st.header("欢迎来到AI感情助手！")
@@ -45,7 +45,6 @@ st.header("欢迎来到AI感情助手！")
 # 消息历史
 if "messages" not in st.session_state:
     st.session_state.messages = []
-# ai性格记忆化
 if "AIChatName" not in st.session_state:
     st.session_state.AIChatName = AIChatName
 if "AIChatTrait" not in st.session_state:
@@ -90,9 +89,8 @@ with st.sidebar:
             if st.button("删除", use_container_width=True, key=i + "delete"):
                 os.remove(f"./data/{i}")
                 st.rerun()
-    # 分隔符
-    st.divider()
 
+    st.divider()
     st.subheader("人物配置")
     AINewName = st.text_input("人物名称", value=AIChatName)
     AINewTrait = st.text_area("自定义人物描述", value=AIChatTrait, height=300)
@@ -102,13 +100,7 @@ UserMessage = st.chat_input("主人请说")
 if UserMessage:
     st.session_state.messages.append({"role": "user", "content": UserMessage})
 
-    # 显示用户消息流式输出
-    with st.chat_message("user"):
-        ma = st.empty()
-        s = ""
-        for x in UserMessage:
-            s += x
-            ma.write(s)
+    st.chat_message("user").write(UserMessage)  
 
     response = client.chat.completions.create(
         model=os.getenv("MODULE"),
@@ -124,6 +116,7 @@ if UserMessage:
 
     # 流式显示回复
     res = st.empty()
+    
     ai_resp = ""
     for chunk in response:
         if chunk.choices[0].delta.content:
