@@ -3,3 +3,5 @@
 .venv/ 
 data/
 .git/ 
+__pycache__/
+.obsidian/ 
